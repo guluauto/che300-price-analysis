@@ -1,0 +1,25 @@
+{
+  "name": "che300-price-analysis",
+  "version": "1.0.0",
+  "description": "che300.com 城市价格分析",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@git.guluabc.com:node/che300-price-analysis.git"
+  },
+  "keywords": [
+    "汽车",
+    "价格分析"
+  ],
+  "author": "Kane",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^0.19.0",
+    "mongoose": "^4.1.12",
+    "node-xlsx": "^0.6.0",
+    "request": "^2.65.0"
+  }
+}
