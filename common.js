@@ -43,6 +43,8 @@ function _req(url, callback) {
       url: url,
       callback: callback
     });
+
+    return;
   }
 
   if (p.count == null) {
@@ -78,6 +80,14 @@ function _req(url, callback) {
       console.log('响应状态码:', response.statusCode);
 
       callback.call(this, null, response);
+      return;
+    }
+
+    if (response.request.path.indexOf('wba.htm') !== -1) {
+      console.log('请求失败，此代理已不能用');
+
+      active_ips.splice(active_ips.indexOf(p), 1);
+      callback.call(this, null, response.request.path);
       return;
     }
 
