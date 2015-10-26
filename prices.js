@@ -34,7 +34,7 @@ function _req(cb) {
       return;
     }
 
-    if (count < 20 && url_pool.length > 0) {
+    if (count < 30 && url_pool.length > 0) {
       var xhr = url_pool.shift();
 
       count++;
@@ -99,6 +99,15 @@ function handler(body, model, city) {
 function req_with_city(model) {
   common.citys.forEach(function(city) {
     var delta = now_year - parseInt(model.model_year);
+
+    if (delta < 0) {
+      delta = 0;
+    }
+
+    if (parseInt(model.model_year) === 2016){
+      console.log(JSON.stringify(model));
+    }
+
     var url = CHE300_PINGGU_URL + city.id + 'm' + model.model_id + 'r' + model.model_year + '-6g' + (2 * (delta + 1) - 1);
 
     // 已经抓取到的无需抓取
@@ -120,9 +129,13 @@ function req_with_city(model) {
 
 function read_models(file) {
   var models = JSON.parse(fs.readFileSync(path.join(common.model_path, file)).toString());
-  models.forEach(req_with_city);
+  var ret = models.filter(function(model) {
+    return parseInt(model.model_year) <= now_year;
+  });
 
-  _data.models += models.length;
+  ret.forEach(req_with_city);
+
+  _data.models += ret.length;
 }
 
 var start = -5;
@@ -141,13 +154,15 @@ function next() {
     console.log('** 剩余量: ' + url_pool.length);
     console.log('** 失败量: ' + fail_count);
     console.log('** 成功量: ' + ok_count);
-    records.count({}, function(err, count) {
+    record.count({}, function(err, count) {
       console.log('** 数据库: ' + count);
     });
 
     // fs.writeFileSync('./data.json', JSON.stringify(_data));
     return;
   }
+
+  console.log('** 处理批次 ' + (start / 5 + 1) + ' **');
 
   var model_files = files.splice(start, 5);
   model_files.forEach(read_models);
