@@ -14,10 +14,12 @@ function build_series_url(brand_id) {
   return 'http://meta.che300.com/meta/series/series_brand' + brand_id + '.json?v=55';
 }
 
-brand_ids.forEach(function(brand_id) {
-  var url = build_series_url(brand_id);
+exports.crawl = function() {
+  brand_ids.forEach(function(brand_id) {
+    var url = build_series_url(brand_id);
 
-  common.req(url, function(body) {
-    fs.writeFileSync(path.join(common.series_path, brand_id) + '.json', body);
+    common.req(url, function(body) {
+      fs.writeFileSync(path.join(common.series_path, brand_id) + '.json', body);
+    });
   });
-});
+}
