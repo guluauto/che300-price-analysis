@@ -1,7 +1,3 @@
-var request = require('request');
-var fs = require('fs');
-var path = require('path');
-
 // 1. 页面上DOM元素获取品牌
 // chrome 浏览器中执行
 // var brand_els = $$('.list_1');
@@ -28,7 +24,6 @@ var path = require('path');
 // 杭州 v12c12
 
 // http://www.che300.com/pinggu/v{province_id}c{city_id}m{model_id}r{year_month}g{miles}
-
 
 // http://www.kuaidaili.com/free/
 // var ips = [];
