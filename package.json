@@ -4,6 +4,8 @@
   "description": "che300.com 城市价格分析",
   "main": "index.js",
   "scripts": {
+    "prestart": "npm install",
+    "start": "node ./index.js",
     "test": "mocha test"
   },
   "repository": {
