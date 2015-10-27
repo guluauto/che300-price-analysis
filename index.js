@@ -71,3 +71,11 @@
 //
 // })
 // console.log(JSON.stringify(ips))
+var series = require('./series');
+var models = require('./models');
+var prices = require('./prices');
+
+
+series.crawl();
+models.crawl();
+prices.crawl();
