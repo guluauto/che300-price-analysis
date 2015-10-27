@@ -11,54 +11,64 @@ CHE300_PINGGU_URL = 'http://www.che300.com/pinggu/'
 // v{province_id}c{city_id}m{model_id}r{year_month}g{miles}
 var now_year = new Date().getFullYear();
 
-var count = 0;
-var complete_count = 0;
-var req_count = 0;
-var fail_count = 0;
-var ok_count = 0;
-var url_pool = [];
-var _data = {
-  models: 0,
-  records: 0
-};
+var Pooler = {
+  total: 0,
+  count: 0,
+  fail: 0,
+  ok: 0,
+  pool: [],
+  max_pool_size: 30,
+  duration: 500,
 
-function _req(cb) {
-  var timer = setInterval(function() {
-    console.log('剩余量: ' + url_pool.length);
-    console.log('请求中: ' + (req_count - complete_count));
+  add: function() {
+    this.pool.push.apply(this.pool, arguments);
+  },
 
-    if (url_pool.length === 0 && complete_count === req_count) {
-      clearInterval(timer);
+  size: function() {
+    return this.pool.length;
+  },
 
-      next();
-      return;
-    }
+  done: function() {},
 
-    if (count < 30 && url_pool.length > 0) {
-      var xhr = url_pool.shift();
+  run: function() {
+    var self = this;
 
-      count++;
-      req_count++;
+    var timer = setInterval(function() {
+      console.log('已处理总量: ' + self.total);
+      console.log('剩余量: ' + self.pool.length);
+      console.log('请求中: ' + self.count);
 
-      console.log('正在处理:' + xhr.url);
+      if (self.pool.length === 0 && self.count === 0) {
+        clearInterval(timer);
 
-      common.req(xhr.url, function(body, err) {
-        count--;
-        complete_count++;
+        self.done();
+        return;
+      }
 
-        if (err) {
-          url_pool.push(xhr);
-          fail_count++;
-          return;
-        }
+      if (self.count < self.max_pool_size && self.pool.length > 0) {
+        var xhr = _req.pool.shift();
 
-        ok_count++;
-        xhr.callback(body);
-      });
-    }
-  }, 500)
+        self.count++;
+        self.total++;
+
+        common.req(xhr.url, function(body, err) {
+          self.count--;
+
+          if (err) {
+            self.pool.push(xhr);
+            self.fail++;
+            return;
+          }
+
+          self.ok++;
+          xhr.callback(body);
+        });
+      }
+    }, this.duration);
+  }
 }
 
+// 提取数据写入数据库
 function handler(body, model, city) {
   var $ = cheerio.load(body);
 
@@ -90,24 +100,13 @@ function handler(body, model, city) {
       return;
     }
 
-    console.log(doc);
+    console.log(JSON.stringify(doc));
   });
-
-  // fs.appendFileSync('./rs.txt', '\n' + o);
 }
 
 function req_with_city(model) {
   common.citys.forEach(function(city) {
     var delta = now_year - parseInt(model.model_year);
-
-    if (delta < 0) {
-      delta = 0;
-    }
-
-    if (parseInt(model.model_year) === 2016){
-      console.log(JSON.stringify(model));
-    }
-
     var url = CHE300_PINGGU_URL + city.id + 'm' + model.model_id + 'r' + model.model_year + '-6g' + (2 * (delta + 1) - 1);
 
     // 已经抓取到的无需抓取
@@ -116,7 +115,7 @@ function req_with_city(model) {
       city: city.name
     }, function(err, doc) {
       if (err || !doc) {
-        url_pool.push({
+        Pooler.add({
           url: url,
           callback: function(body) {
             handler(body, model, city);
@@ -127,8 +126,15 @@ function req_with_city(model) {
   });
 }
 
+var _data = {
+  models: 0,
+  records: 0
+};
+
 function read_models(file) {
   var models = JSON.parse(fs.readFileSync(path.join(common.model_path, file)).toString());
+
+  // 过滤 2015 年后的车
   var ret = models.filter(function(model) {
     return parseInt(model.model_year) <= now_year;
   });
@@ -138,40 +144,54 @@ function read_models(file) {
   _data.models += ret.length;
 }
 
-var start = -5;
-var files = fs.readdirSync(common.model_path);
+function dispatch_models() {
+  var files = fs.readdirSync(common.model_path);
+  var start = -5;
+  var offset = 5;
 
-function next() {
-  start += 5;
+  console.log('model 总文件数:' + files.length + '，最后一批位置: ' + (files.length - (files.length % offset)));
 
-  console.log('-- start: ' + start + ', --: ' + (files.length - (files.length % 5)));
+  return function() {
+    console.log('-- start: ' + start + ', --: ' + (files.length - (files.length % 5)));
 
-  if (start > files.length - (files.length % 5)) {
-    // 需抓取的总记录条数，可能有些已经抓到并存在数据库中
-    _data.records = _data.models * common.citys.length;
+    if (start > files.length - (files.length % offset)) {
+      // 需抓取的总记录条数，可能有些已经抓到并存在数据库中
+      _data.records = _data.models * common.citys.length;
 
-    console.log('抓取完成，统计如下:')
-    console.log('** 车款量: ' + _data.models);
-    console.log('** 记录量: ' + _data.records);
-    console.log('** 剩余量: ' + url_pool.length);
-    console.log('** 失败量: ' + fail_count);
-    console.log('** 成功量: ' + ok_count);
-    record.count({}, function(err, count) {
-      console.log('** 数据库: ' + count);
-    });
+      console.log('抓取完成，统计如下:')
+      console.log('** 车款量: ' + _data.models);
+      console.log('** 记录量: ' + _data.records);
+      console.log('** 剩余量: ' + Pooler.size());
+      console.log('** 失败量: ' + Pooler.fail);
+      console.log('** 成功量: ' + Pooler.ok);
+      record.count({}, function(err, count) {
+        console.log('** 数据库: ' + count);
+      });
 
-    // fs.writeFileSync('./data.json', JSON.stringify(_data));
-    return;
+      return false;
+    }
+
+    console.log('** 处理批次 ' + (start / offset + 1) + ' **');
+
+    var model_files = files.splice(0, offset);
+    // 将请求加入 _req 池子
+    model_files.forEach(read_models);
+
+    return true;
   }
-
-  console.log('** 处理批次 ' + (start / 5 + 1) + ' **');
-
-  var model_files = files.splice(0, 5);
-  model_files.forEach(read_models);
-
-  _req();
 }
 
-console.log('model 总文件数:' + files.length + '，最后一批位置: ' + (files.length - (files.length % 5)));
-console.log('-------- 处理开始 --------');
-next();
+exports.crawl = function() {
+  var nexter = dispatch_models();
+
+  var start = function() {
+    if (nexter()) {
+      // 启动处理池子任务
+      Pooler.run();
+    }
+  };
+
+  Pooler.done = start;
+
+  start();
+}
