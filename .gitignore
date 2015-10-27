@@ -2,7 +2,6 @@ log/
 models/
 series/
 all_city.json
-brands.json
 ips.json
 config.js
 result.xlsx
