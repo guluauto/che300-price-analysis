@@ -144,7 +144,9 @@ var files = fs.readdirSync(common.model_path);
 function next() {
   start += 5;
 
-  if (start > files.length - 5) {
+  console.log('-- start: ' + start + ', --: ' + (files.length - (files.length % 5)));
+
+  if (start > files.length - (files.length % 5)) {
     // 需抓取的总记录条数，可能有些已经抓到并存在数据库中
     _data.records = _data.models * common.citys.length;
 
@@ -164,10 +166,12 @@ function next() {
 
   console.log('** 处理批次 ' + (start / 5 + 1) + ' **');
 
-  var model_files = files.splice(start, 5);
+  var model_files = files.splice(0, 5);
   model_files.forEach(read_models);
 
   _req();
 }
 
+console.log('model 总文件数:' + files.length + '，最后一批位置: ' + (files.length - (files.length % 5)));
+console.log('-------- 处理开始 --------');
 next();
