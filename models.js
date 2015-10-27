@@ -10,14 +10,16 @@ function build_model_url(series_id) {
 
 var files = fs.readdirSync(common.series_path);
 
-files.forEach(function(file) {
-  var series = JSON.parse(fs.readFileSync(path.join(common.series_path, file)).toString());
+exports.crawl = function() {
+  files.forEach(function(file) {
+    var series = JSON.parse(fs.readFileSync(path.join(common.series_path, file)).toString());
 
-  series.forEach(function(_series) {
-    var url = build_model_url(_series.series_id);
+    series.forEach(function(_series) {
+      var url = build_model_url(_series.series_id);
 
-    common.req(url, function(body) {
-      fs.writeFileSync(path.join(common.model_path, _series.series_id) + '.json', body);
+      common.req(url, function(body) {
+        fs.writeFileSync(path.join(common.model_path, _series.series_id) + '.json', body);
+      });
     });
   });
-})
+}
