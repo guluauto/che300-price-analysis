@@ -46,7 +46,7 @@ var Pooler = {
       }
 
       if (self.count < self.max_pool_size && self.pool.length > 0) {
-        var xhr = _req.pool.shift();
+        var xhr = self.pool.shift();
 
         self.count++;
         self.total++;
@@ -146,15 +146,16 @@ function read_models(file) {
 
 function dispatch_models() {
   var files = fs.readdirSync(common.model_path);
+  var len = files.length;
   var start = -5;
   var offset = 5;
 
-  console.log('model 总文件数:' + files.length + '，最后一批位置: ' + (files.length - (files.length % offset)));
+  console.log('model 总文件数:' + files.length + ', 最后一批位置: ' + (files.length - (files.length % offset)));
 
   return function() {
-    console.log('-- start: ' + start + ', --: ' + (files.length - (files.length % 5)));
+    start += 5;
 
-    if (start > files.length - (files.length % offset)) {
+    if (start > len - (len % offset)) {
       // 需抓取的总记录条数，可能有些已经抓到并存在数据库中
       _data.records = _data.models * common.citys.length;
 
@@ -171,6 +172,7 @@ function dispatch_models() {
       return false;
     }
 
+    console.log('-- start: ' + start + ', --: ' + (files.length - (files.length % 5)));
     console.log('** 处理批次 ' + (start / offset + 1) + ' **');
 
     var model_files = files.splice(0, offset);
@@ -195,3 +197,5 @@ exports.crawl = function() {
 
   start();
 }
+
+exports.crawl();
