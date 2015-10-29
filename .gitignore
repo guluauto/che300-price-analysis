@@ -5,6 +5,7 @@ all_city.json
 ips.json
 config.js
 result.xlsx
+_start.txt
 
 # Numerous always-ignore extensions
 *.bak
