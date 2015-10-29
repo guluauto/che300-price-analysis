@@ -6,6 +6,7 @@ ips.json
 config.js
 result.xlsx
 _start.txt
+test.html
 
 # Numerous always-ignore extensions
 *.bak
