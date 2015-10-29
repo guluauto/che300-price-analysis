@@ -40,21 +40,43 @@ function req(url, callback) {
 }
 
 exports.crawl = function() {
+  console.log('-- 开始抓取车型 --');
+
   var files = fs.readdirSync(common.series_path);
+  var count = 0;
+  var complete = 0;
 
   files.forEach(function(file) {
     var series = JSON.parse(fs.readFileSync(path.join(common.series_path, file)).toString());
+
+    count += series.length;
 
     series.forEach(function(_series) {
       var url = build_model_url(_series.series_id);
 
       req(url, function(body) {
+        complete++;
+
+        if (body == null) {
+          return;
+        }
+
         fs.writeFileSync(path.join(common.model_path, _series.series_id) + '.json', body);
       });
     });
   });
 
-  console.log('车型抓取完成');
+  var timer = setInterval(function() {
+    if (count === complete) {
+      clearInterval(timer);
+
+      console.log('车型抓取完成');
+      console.log('车系量: ' + count);
+      console.log('完成量: ' + complete);
+
+      return;
+    }
+  }, 500);
 }
 
-exports.crawl();
+this.crawl();
