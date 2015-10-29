@@ -58,6 +58,7 @@ function _req(url, callback) {
   var options = {
     url: url,
     proxy: 'http://' + p.ip + ':' + p.port,
+    timeout: 5000,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.71 Safari/537.36'
     }
