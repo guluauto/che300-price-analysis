@@ -15,42 +15,41 @@ function build_series_url(brand_id) {
   return 'http://meta.che300.com/meta/series/series_brand' + brand_id + '.json?v=55';
 }
 
-function req(url, callback) {
-  var options = {
-    url: url,
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.71 Safari/537.36'
-    }
-  };
-
-  request(options, function(err, res, body) {
-    if (err) {
-      console.log('请求失败');
-      console.log(err);
-
-      callback.call(this, null, err);
-
-      return;
-    }
-
-    if (res.statusCode !== 200) {
-      console.log('请求失败');
-      console.log('响应状态码:', res.statusCode);
-
-      callback.call(this, null, res);
-      return;
-    }
-
-    callback.call(this, body);
-  });
-}
-
 exports.crawl = function() {
+  console.log('-- 开始根据品牌抓取车系 --');
+
+  var count = brand_ids.length;
+  var complete = 0;
+  var total = 0;
+
   brand_ids.forEach(function(brand_id) {
     var url = build_series_url(brand_id);
 
-    req(url, function(body) {
+    common.req(url, function(body) {
+      complete++;
+
+      if (body == null) {
+        return;
+      }
+
       fs.writeFileSync(path.join(common.series_path, brand_id) + '.json', body);
+
+      total += JSON.parse(body).length;
     });
   });
+
+  var timer = setInterval(function() {
+    if (count === complete) {
+      clearInterval(timer);
+
+      console.log('车系抓取完成');
+      console.log('品牌量: ' + count);
+      console.log('完成量: ' + complete);
+      console.log('车系量: ' + total);
+
+      return;
+    }
+  }, 500);
 }
+
+this.crawl();
