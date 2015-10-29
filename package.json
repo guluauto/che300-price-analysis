@@ -23,7 +23,7 @@
     "glob": "^5.0.15",
     "lodash": "^3.10.1",
     "mongoose": "^4.1.12",
-    "node-xlsx": "^0.6.0",
-    "request": "^2.65.0"
+    "request": "^2.65.0",
+    "xlsx-stream": "^0.1.2"
   }
 }
