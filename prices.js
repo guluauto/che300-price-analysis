@@ -5,6 +5,7 @@ var glob = require('glob');
 var _ = require('lodash');
 var common = require('./common');
 var record = require('./model/record');
+var Pooler = require('./pooler');
 
 require('./db');
 
@@ -12,63 +13,6 @@ CHE300_PINGGU_URL = 'http://www.che300.com/pinggu/'
 
 // v{province_id}c{city_id}m{model_id}r{year_month}g{miles}
 var now_year = new Date().getFullYear();
-
-var Pooler = {
-  total: 0,
-  count: 0,
-  fail: 0,
-  ok: 0,
-  pool: [],
-  max_pool_size: 30,
-  duration: 500,
-
-  add: function() {
-    this.pool.push.apply(this.pool, arguments);
-  },
-
-  size: function() {
-    return this.pool.length;
-  },
-
-  done: function() {},
-
-  run: function() {
-    var self = this;
-
-    var timer = setInterval(function() {
-      console.log('已处理总量: ' + self.total);
-      console.log('剩余量: ' + self.pool.length);
-      console.log('请求中: ' + self.count);
-
-      if (self.pool.length === 0 && self.count === 0) {
-        clearInterval(timer);
-
-        self.done();
-        return;
-      }
-
-      if (self.count < self.max_pool_size && self.pool.length > 0) {
-        var xhr = self.pool.shift();
-
-        self.count++;
-        self.total++;
-
-        common.req(xhr.url, function(body, err) {
-          self.count--;
-
-          if (err) {
-            self.pool.push(xhr);
-            self.fail++;
-            return;
-          }
-
-          self.ok++;
-          xhr.callback(body);
-        });
-      }
-    }, this.duration);
-  }
-}
 
 var _data = {
   models: 0,
@@ -161,6 +105,13 @@ function dispatch_models() {
   var len = files.length;
   var start = -5;
   var offset = 5;
+  var last_start_file = './_start.txt';
+
+  if (fs.existsSync(last_start_file)) {
+    start = parseInt(fs.readFileSync(last_start_file).toString()) - 5;
+
+    files.splice(0, start);
+  }
 
   console.log('车款总文件数:' + files.length + ', 最后一批索引: ' + (files.length - (files.length % offset)));
 
@@ -178,13 +129,15 @@ function dispatch_models() {
       console.log('** 失败量: ' + Pooler.fail);
       console.log('** 成功量: ' + Pooler.ok);
       console.log('** 查询量: ' + _data.query_count);
-      console.log('** 返回量: ' + _count);
+      console.log('** 返回量: ' + _data.return_count);
 
       return false;
     }
 
     console.log('-- 车款文件索引: ' + start + ', 剩余车款文件量: ' + (files.length - (files.length % 5)) + ' --');
     console.log('-- 处理批次 ' + (start / offset + 1) + ' --');
+
+    fs.writeFileSync(last_start_file, start);
 
     var model_files = files.splice(0, offset);
     // 将请求加入 _req 池子
@@ -195,8 +148,6 @@ function dispatch_models() {
     return p;
   }
 }
-
-
 
 exports.crawl = function() {
   var nexter = dispatch_models();
