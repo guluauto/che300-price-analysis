@@ -3,70 +3,79 @@ var request = require('request');
 var SERIES_PATH = './series';
 var MODEL_PATH = './models'
 
+// 可用代理池子
 var ips = require('./ips.json');
-
-var ok_ips = [];
+// 正在使用的代理
 var active_ips = [];
-var tmp_ips = ips;
+// 无效的代理
+var invalid_ips = [];
 
-var req_pool = [];
-
-var timer = setInterval(function() {
-  if (!tmp_ips.length && !ok_ips.length) {
+function req_proxy(url, callback, timeout) {
+  if (!ips.length) {
+    console.log('已没有可用代理');
     return;
   }
 
-  if (!active_ips.length) {
-    ok_ips.forEach(function(p) {
-      console.log('ip: ' + p.ip + ':' + p.port + ', 请求次数: ' + p.count);
-    });
-    clearInterval(timer);
-
-    return;
-  }
-
-  if (req_pool.length) {
-    var r = req_pool.shift();
-    _req(r.url, r.callback);
-  }
-}, 500);
-
-function _req(url, callback) {
-  var p;
-
-  if (tmp_ips.length) {
-    p = tmp_ips.shift();
-  } else if (ok_ips.length) {
-    p = ok_ips.shift();
-  } else {
-    req_pool.push({
-      url: url,
-      callback: callback
-    });
-
-    return;
-  }
-
-  if (p.count == null) {
-    p.count = 1;
-  } else {
-    p.count++;
-  }
-
-  active_ips.push(p);
+  var proxy = ips.shift();
+  proxy.count = proxy.count == null ? (proxy.count + 1) : 1;
+  active_ips.push(proxy);
 
   var options = {
     url: url,
-    proxy: 'http://' + p.ip + ':' + p.port,
-    timeout: 5000,
+    proxy: 'http://' + proxy.ip + ':' + proxy.port,
+    timeout: timeout || 20 * 1000,
     headers: {
       'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.71 Safari/537.36'
     }
   };
 
   console.log(url + ' | ' + options.proxy);
-
   request(options, function(err, response, body) {
+    active_ips.splice(active_ips.indexOf(proxy), 1);
+
+    if (err) {
+      console.log('请求失败');
+      console.log(err);
+
+      callback.call(this, null, err);
+      invalid_ips.push(proxy);
+
+      return;
+    }
+
+    if (response.statusCode !== 200) {
+      console.log('请求失败');
+      console.log('响应状态码:', response.statusCode);
+
+      ips.push(proxy);
+      callback.call(this, null, response);
+
+      return;
+    }
+
+    if (response.request.path.indexOf('wba.htm') !== -1) {
+      console.log('请求失败，此代理已不能用');
+
+      callback.call(this, null, response.request.path);
+      invalid_ips.push(proxy);
+      return;
+    }
+
+    ips.push(proxy);
+    callback.call(this, body);
+  })
+}
+
+function req(url, callback, timeout) {
+  var options = {
+    url: url,
+    timeout: timeout || 20 * 1000,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.71 Safari/537.36'
+    }
+  };
+
+  request(options, function(err, res, body) {
     if (err) {
       console.log('请求失败');
       console.log(err);
@@ -76,24 +85,13 @@ function _req(url, callback) {
       return;
     }
 
-    if (response.statusCode !== 200) {
+    if (res.statusCode !== 200) {
       console.log('请求失败');
-      console.log('响应状态码:', response.statusCode);
+      console.log('响应状态码:', res.statusCode);
 
-      callback.call(this, null, response);
+      callback.call(this, null, res);
       return;
     }
-
-    if (response.request.path.indexOf('wba.htm') !== -1) {
-      console.log('请求失败，此代理已不能用');
-
-      active_ips.splice(active_ips.indexOf(p), 1);
-      callback.call(this, null, response.request.path);
-      return;
-    }
-
-    ok_ips.push(p);
-    active_ips.splice(active_ips.indexOf(p), 1);
 
     callback.call(this, body);
   });
@@ -144,7 +142,8 @@ var CITYS = [
 ]
 
 module.exports = {
-  req: _req,
+  req: req,
+  req_proxy: req_proxy,
   series_path: SERIES_PATH,
   model_path: MODEL_PATH,
   citys: CITYS
