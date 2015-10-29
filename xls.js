@@ -1,9 +1,12 @@
 var fs = require('fs');
 var path = require('path');
+var glob = require('glob');
 var record = require('./model/record');
 var common = require('./common');
 var xlsx = require('node-xlsx');
 require('./db');
+
+var now_year = new Date().getFullYear();
 
 common.citys.sort(function(a, b) {
   if (a.name > b.name) {
@@ -69,18 +72,24 @@ function calc(records, key) {
   return [delta, percentage + '%'];
 }
 
-var files = fs.readdirSync(common.model_path);
+var files = glob.sync(path.join(common.model_path, '*.json'));
 var models = [];
 
-files.splice(0, files.length).forEach(function(file) {
-  var _models = JSON.parse(fs.readFileSync(path.join(common.model_path, file)).toString());
-  models = models.concat(_models.map(function(model) {
+files.forEach(function(file) {
+  var _models = require('./' + file);
+
+  // 过滤 2015 年后的车
+  var ret = _models.filter(function(model) {
+    return parseInt(model.model_year) <= now_year;
+  });
+
+  models = models.concat(ret.map(function(model) {
     return model.model_id;
   }));
 });
 
 var count = models.length;
-console.log(count);
+console.log('车型总量: ' + count);
 
 var timer = setInterval(function() {
   if (count === 0) {
