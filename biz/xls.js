@@ -1,17 +1,17 @@
 var fs = require('fs');
 var path = require('path');
 var glob = require('glob');
-var record = require('./model/record');
-var common = require('./common');
 var xlsx = require('xlsx-stream');
+var record = require('../model/record');
+var data = require('../data');
 
-require('./db');
+require('../db');
 
 var x = xlsx();
-x.pipe(fs.createWriteStream('./result.xlsx'));
+x.pipe(fs.createWriteStream(data.excel_file));
 
 function tb_head() {
-  common.citys.sort(function(a, b) {
+  data.citys.sort(function(a, b) {
     if (a.name > b.name) {
       return 1;
     }
@@ -27,7 +27,7 @@ function tb_head() {
 
   var headers = ['车款id', '车款', '年份', '公里', '排放标准'];
 
-  common.citys.forEach(function(city) {
+  data.citys.forEach(function(city) {
     headers.push(city.name + '-车商收购价');
     headers.push(city.name + '-个人交易价')
     headers.push(city.name + '-车商零售价')
@@ -46,7 +46,7 @@ function tb_head() {
 var now_year = new Date().getFullYear();
 
 function get_model_ids() {
-  var files = glob.sync(path.join(common.model_path, '*.json'));
+  var files = glob.sync(path.join(data.model_path, '*.json'));
   var models = [];
 
   files.forEach(function(file) {
@@ -97,21 +97,6 @@ function calc(records, key) {
   return [delta, percentage + '%'];
 }
 
-// var timer = setInterval(function() {
-//   if (count === 0) {
-//     var buffer = xlsx.build([{
-//       name: "车款价格对比",
-//       data: data
-//     }]);
-//
-//     fs.writeFileSync('result.xlsx', buffer, 'binary');
-//
-//     console.log('写入 excel 成功，车款量 ' + (data.length - 1));
-//
-//     clearInterval(timer);
-//   }
-// }, 3000);
-
 var total = 0;
 var ok = 0;
 
@@ -151,7 +136,7 @@ function query(models) {
         r.push((now_year - parseInt(docs[0].year) + 1) * 2 - 1);
         r.push(docs[0].pf);
 
-        common.citys.forEach(function(city) {
+        data.citys.forEach(function(city) {
           var _docs = docs.filter(function(doc) {
             return doc.city == city.name
           });

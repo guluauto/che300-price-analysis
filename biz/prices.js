@@ -3,15 +3,12 @@ var path = require('path');
 var cheerio = require('cheerio');
 var glob = require('glob');
 var _ = require('lodash');
-var data = require('./data');
-var record = require('./model/record');
-var Pooler = require('./lib/pooler');
+var data = require('../data');
+var record = require('../model/record');
+var Pooler = require('../lib/pooler');
 
-require('./db');
+require('../db');
 
-CHE300_PINGGU_URL = 'http://www.che300.com/pinggu/'
-
-// v{province_id}c{city_id}m{model_id}r{year_month}g{miles}
 var now_year = new Date().getFullYear();
 
 var _data = {
@@ -22,13 +19,24 @@ var _data = {
 };
 
 // 提取数据写入数据库
-function handler(body, model, city) {
+function handler(body, model, city, url) {
   var $ = cheerio.load(body);
 
   var pf = $('.data_span').eq(0).text().replace('排放标准：', '');
   var dealer_price = parseFloat($('.dealer_price p').eq(1).text().replace('￥', '').replace('万', ''));
   var person_price = parseFloat($('.person_price p span').text());
   var dealer_retial_prices = parseFloat($('.dealer_retial_prices p').eq(1).text().replace('￥', '').replace('万', ''));
+
+  if (isNaN(dealer_price) && isNaN(person_price) && isNaN(dealer_retial_prices)) {
+    Pooler.add({
+      url: url,
+      callback: function(body) {
+        handler(body, model, city, url);
+      }
+    });
+
+    return;
+  }
 
   var o = {
     model_id: model.model_id,
@@ -60,7 +68,7 @@ function handler(body, model, city) {
 function req_with_city(model) {
   return data.citys.map(function(city) {
     var delta = now_year - parseInt(model.model_year);
-    var url = CHE300_PINGGU_URL + city.id + 'm' + model.model_id + 'r' + model.model_year + '-6g' + (2 * (delta + 1) - 1);
+    var url = data.build_pinggu_url(city.id, model.model_id, model.model_year, (2 * (delta + 1) - 1));
 
     // 已经抓取到的无需抓取
     return record
@@ -73,7 +81,7 @@ function req_with_city(model) {
           Pooler.add({
             url: url,
             callback: function(body) {
-              handler(body, model, city);
+              handler(body, model, city, url);
             }
           });
         } else {
@@ -84,7 +92,7 @@ function req_with_city(model) {
 }
 
 function read_models(file) {
-  var models = require('./' + file);
+  var models = require(path.resolve(data.root, file));
 
   // 过滤 2015 年后的车
   var ret = models.filter(function(model) {
@@ -101,11 +109,13 @@ function read_models(file) {
 }
 
 function dispatch_models() {
-  var files = glob.sync(path.join(data.model_path, '*.json'));
+  var files = glob.sync(path.relative(data.root, path.join(data.model_path, '*.json')), {
+    root: data.root
+  });
   var len = files.length;
   var start = -5;
   var offset = 5;
-  var last_start_file = './_start.txt';
+  var last_start_file = data.crawl_price_pos_file;
 
   if (fs.existsSync(last_start_file)) {
     start = parseInt(fs.readFileSync(last_start_file).toString()) - 5;
@@ -156,7 +166,7 @@ exports.crawl = function() {
     var p = nexter();
 
     if (p) {
-      console.log('-- 数据库查询量: ' + p.length + '--');
+      console.log('-- 数据库查询量: ' + p.length + ' --');
       _data.query_count += p.length;
 
       Promise

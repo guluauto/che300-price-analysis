@@ -1,19 +1,14 @@
 var fs = require('fs');
 var path = require('path');
-var data = require('./data');
-var req = require('./lib/req');
+var data = require('../data');
+var req = require('../lib/req');
 
-// 根据品牌获取车系
-// 车300车系获取地址: http://meta.che300.com/meta/series/series_brand{brand_id}.json?v=55
-var brands = require('./brands.json');
+
+var brands = require(data.brands_file);
 
 var brand_ids = brands.map(function(brand) {
   return brand.id;
 });
-
-function build_series_url(brand_id) {
-  return 'http://meta.che300.com/meta/series/series_brand' + brand_id + '.json?v=55';
-}
 
 exports.crawl = function() {
   console.log('-- 开始根据品牌抓取车系 --');
@@ -23,7 +18,7 @@ exports.crawl = function() {
   var total = 0;
 
   brand_ids.forEach(function(brand_id) {
-    var url = build_series_url(brand_id);
+    var url = data.build_series_url(brand_id);
 
     req(url, function(body) {
       complete++;

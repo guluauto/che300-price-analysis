@@ -34,7 +34,5 @@ request(options, function(err, response, body) {
 
   console.log(response.request)
 
-  fs.writeFileSync('./test.html', body);
-})
-
-// fs.readFileSync(path.join(common.model_path, file)
+  fs.writeFileSync('./tmp/test.html', body);
+});

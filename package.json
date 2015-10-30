@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "prestart": "npm install",
-    "start": "node ./index.js",
-    "test": "mocha test"
+    "start": "node ./index.js"
   },
   "repository": {
     "type": "git",

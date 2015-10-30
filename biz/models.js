@@ -1,16 +1,10 @@
 var fs = require('fs');
 var path = require('path');
-var data = require('./data');
-var Pooler = require('./lib/pooler');
-var model = require('./model/model');
+var data = require('../data');
+var Pooler = require('../lib/pooler');
+var model = require('../model/model');
 
-require('./db');
-
-// 根据车系获取车款
-// 车款获取地址: http://meta.che300.com/meta/model/model_series213.json?v=55
-function build_model_url(series_id) {
-  return 'http://meta.che300.com/meta/model/model_series' + series_id + '.json?v=57'
-}
+require('../db');
 
 exports.crawl = function() {
   console.log('-- 开始根据车系抓取车型 --');
@@ -28,7 +22,7 @@ exports.crawl = function() {
     count += series.length;
 
     series.forEach(function(_series) {
-      var url = build_model_url(_series.series_id);
+      var url = data.build_model_url(_series.series_id);
 
       Pooler.add({
         url: url,
