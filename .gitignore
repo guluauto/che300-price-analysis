@@ -1,7 +1,7 @@
 log/
 models/
 series/
-all_city.json
+city.json
 ips.json
 config.js
 result.xlsx
