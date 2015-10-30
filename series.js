@@ -1,7 +1,7 @@
 var fs = require('fs');
 var path = require('path');
-var request = require('request');
-var common = require('./common');
+var data = require('./data');
+var req = require('./lib/req');
 
 // 根据品牌获取车系
 // 车300车系获取地址: http://meta.che300.com/meta/series/series_brand{brand_id}.json?v=55
@@ -25,14 +25,14 @@ exports.crawl = function() {
   brand_ids.forEach(function(brand_id) {
     var url = build_series_url(brand_id);
 
-    common.req(url, function(body) {
+    req(url, function(body) {
       complete++;
 
       if (body == null) {
         return;
       }
 
-      fs.writeFileSync(path.join(common.series_path, brand_id) + '.json', body);
+      fs.writeFileSync(path.join(data.series_path, brand_id) + '.json', body);
 
       total += JSON.parse(body).length;
     });
@@ -50,6 +50,6 @@ exports.crawl = function() {
       return;
     }
   }, 500);
-}
+};
 
 this.crawl();
