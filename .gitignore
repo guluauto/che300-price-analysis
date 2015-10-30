@@ -2,6 +2,7 @@ log/
 models/
 series/
 city.json
+brands.json
 ips.json
 config.js
 result.xlsx
