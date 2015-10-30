@@ -3,9 +3,9 @@ var path = require('path');
 var cheerio = require('cheerio');
 var glob = require('glob');
 var _ = require('lodash');
-var common = require('./common');
+var data = require('./data');
 var record = require('./model/record');
-var Pooler = require('./pooler');
+var Pooler = require('./lib/pooler');
 
 require('./db');
 
@@ -58,7 +58,7 @@ function handler(body, model, city) {
 }
 
 function req_with_city(model) {
-  return common.citys.map(function(city) {
+  return data.citys.map(function(city) {
     var delta = now_year - parseInt(model.model_year);
     var url = CHE300_PINGGU_URL + city.id + 'm' + model.model_id + 'r' + model.model_year + '-6g' + (2 * (delta + 1) - 1);
 
@@ -101,7 +101,7 @@ function read_models(file) {
 }
 
 function dispatch_models() {
-  var files = glob.sync(path.join(common.model_path, '*.json'));
+  var files = glob.sync(path.join(data.model_path, '*.json'));
   var len = files.length;
   var start = -5;
   var offset = 5;
@@ -120,7 +120,7 @@ function dispatch_models() {
 
     if (start > len - (len % offset)) {
       // 需抓取的总记录条数，可能有些已经抓到并存在数据库中
-      _data.records = _data.models * common.citys.length;
+      _data.records = _data.models * data.citys.length;
 
       console.log('抓取完成，统计如下:')
       console.log('** 车款量: ' + _data.models);
