@@ -131,7 +131,7 @@ function dispatch_models() {
       console.log('** 查询量: ' + _data.query_count);
       console.log('** 返回量: ' + _data.return_count);
 
-      return false;
+      process.exit();
     }
 
     console.log('-- 车款文件索引: ' + start + ', 剩余车款文件量: ' + (files.length - (files.length % 5)) + ' --');
