@@ -71,3 +71,24 @@
 //
 // })
 // console.log(JSON.stringify(ips))
+
+var shell = require('shelljs');
+
+var crawl_series = shell.exec('node ./series.js');
+if (crawl_series.code !== 0) {
+  process.exit(1);
+}
+
+var crawl_models = shell.exec('node ./models.js');
+if (crawl_models.code !== 0) {
+  process.exit(1);
+}
+
+var crawl_prices = shell.exec('node ./prices.js');
+if (crawl_prices.code !== 0) {
+  process.exit(1);
+}
+
+console.log('******************************************');
+console.log('***** 恭喜您, che300 城市车价抓取全部完成 *****');
+console.log('******************************************');
