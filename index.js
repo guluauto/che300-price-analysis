@@ -74,18 +74,28 @@
 
 var shell = require('shelljs');
 
-var crawl_series = shell.exec('node ./series.js');
-if (crawl_series.code !== 0) {
-  process.exit(1);
+function exe(cmd) {
+  var r = shell.exec(cmd[0]);
+
+  if (r.code !== 0) {
+    console.log('~~~~~ ' + cmd[1] + '抓取失败 ~~~~~');
+    process.exit(1);
+  }
 }
 
-var crawl_models = shell.exec('node ./models.js');
-if (crawl_models.code !== 0) {
-  process.exit(1);
-}
+var c = [
+  ['node ./biz/brand.js', '品牌'],
+  ['node ./biz/city.js', '城市'],
+  ['node ./biz/series.js', '车系'],
+  ['node ./biz/models.js', '车款'],
+  ['node ./biz/prices.js', '城市车价']
+];
 
-var crawl_prices = shell.exec('node ./prices.js');
-if (crawl_prices.code !== 0) {
+c.forEach(exe);
+
+var export_xlsx = shell.exec('node ./biz/xls.js');
+if (export_xlsx.code !== 0) {
+  console.log('~~~~~ 导出失败 ~~~~~');
   process.exit(1);
 }
 
