@@ -55,6 +55,8 @@ exports.crawl = function() {
       .all(insert_promises)
       .then(function() {
         console.log('插入数据库完成');
+
+        process.exit();
       });
   }
 
