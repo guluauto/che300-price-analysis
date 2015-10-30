@@ -1,13 +1,7 @@
 log/
 models/
-series/
-city.json
-brands.json
-ips.json
+tmp/
 config.js
-result.xlsx
-_start.txt
-test.html
 
 # Numerous always-ignore extensions
 *.bak
