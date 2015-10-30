@@ -1,7 +1,6 @@
-var SERIES_PATH = './series';
-var MODEL_PATH = './models'
+var path = require('path');
 
-var CITYS = [
+var citys = [
   {
     name: '西安',
     id: 'v28c27',
@@ -45,8 +44,40 @@ var CITYS = [
   }
 ];
 
+var root = __dirname;
+
 module.exports = {
-  series_path: SERIES_PATH,
-  model_path: MODEL_PATH,
-  citys: CITYS
+  root: root,
+  series_path: path.resolve(root, './tmp/series'),
+  model_path: path.resolve(root, './tmp/models'),
+  citys_file: path.resolve(root, './tmp/city.json'),
+  brands_file: path.resolve(root, './tmp/brands.json'),
+  excel_file: path.resolve(root, './tmp/result.xlsx'),
+  crawl_price_pos_file: path.resolve(root, './tmp/_pos.txt'),
+  proxys_file: path.resolve(root, './tmp/ips.json'),
+
+  // 需要抓取的 8 个城市
+  citys: citys,
+  // 抓取代理页面需要翻墙.....
+  proxy: 'http://192.168.0.109:1080',
+
+  home_url: 'http://www.che300.com/',
+  city_url: 'http://meta.che300.com/location/all_city.json',
+
+  // 根据品牌获取车系
+  // 车300车系获取地址: http://meta.che300.com/meta/series/series_brand{brand_id}.json?v=55
+  build_series_url: function(brand_id) {
+    return 'http://meta.che300.com/meta/series/series_brand' + brand_id + '.json?v=55';
+  },
+
+  // 根据车系获取车款
+  // 车款获取地址: http://meta.che300.com/meta/model/model_series213.json?v=55
+  build_model_url: function(series_id) {
+    return 'http://meta.che300.com/meta/model/model_series' + series_id + '.json?v=57'
+  },
+
+  // 车价评估 path 为 v{province_id}c{city_id}m{model_id}r{year_month}g{miles}
+  build_pinggu_url: function(cid, mid, year, miles) {
+    return 'http://www.che300.com/pinggu/' + cid + 'm' + mid + 'r' + year + '-6g' + miles;
+  }
 }
