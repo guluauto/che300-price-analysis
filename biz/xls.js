@@ -46,11 +46,11 @@ function tb_head() {
 var now_year = new Date().getFullYear();
 
 function get_model_ids() {
-  var files = glob.sync(path.join(data.model_path, '*.json'));
+  var files = glob.sync(path.relative(data.root, path.join(data.model_path, '*.json')));
   var models = [];
 
   files.forEach(function(file) {
-    var _models = require('./' + file);
+    var _models = require(path.resolve(data.root, file));
 
     // 过滤 2015 年后的车
     var ret = _models.filter(function(model) {
@@ -187,8 +187,6 @@ exports.run = function() {
       console.log('成功写入 excel ' + ok + '款车, 写入比例 ' + ok_percentage + '%');
 
       clearInterval(timer);
-
-      process.exit();
     }
 
     var handle_percentage = Math.round((len - total) / len * 100);
