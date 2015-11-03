@@ -25,7 +25,7 @@ function tb_head() {
     }
   });
 
-  var headers = ['车款id', '车款', '年份', '公里', '排放标准'];
+  var headers = ['车款id', '车款', '年份', '新车价', '公里', '排放标准'];
 
   data.citys.forEach(function(city) {
     headers.push(city.name + '-车商收购价');
@@ -133,6 +133,7 @@ function query(models) {
         r.push(docs[0].model_id);
         r.push(docs[0].model_name);
         r.push(docs[0].year);
+        r.push(docs[0].model_price);
         r.push((now_year - parseInt(docs[0].year) + 1) * 2 - 1);
         r.push(docs[0].pf);
 
@@ -171,6 +172,8 @@ function query(models) {
 }
 
 exports.run = function() {
+  tb_head();
+
   var models = get_model_ids();
   var len = models.length;
   total = len;
