@@ -45,7 +45,7 @@ function tb_head() {
 
 var now_year = new Date().getFullYear();
 
-function get_model_ids() {
+function get_models() {
   var files = glob.sync(path.relative(data.root, path.join(data.model_path, '*.json')));
   var models = [];
 
@@ -58,7 +58,10 @@ function get_model_ids() {
     });
 
     models = models.concat(ret.map(function(model) {
-      return model.model_id;
+      return {
+        model_id: model.model_id,
+        model_year: model.model_year
+      };
     }));
   });
 
@@ -101,10 +104,10 @@ var total = 0;
 var ok = 0;
 
 function query(models) {
-  models.forEach(function(model_id) {
+  models.forEach(function(model) {
     return record
       .find({
-        model_id: model_id
+        model_id: model.model_id
       })
       .limit(20)
       .exec(function(err, docs) {
@@ -133,7 +136,7 @@ function query(models) {
         r.push(docs[0].model_id);
         r.push(docs[0].model_name);
         r.push(docs[0].year);
-        r.push(docs[0].model_price);
+        r.push(model.model_price);
         r.push((now_year - parseInt(docs[0].year) + 1) * 2 - 1);
         r.push(docs[0].pf);
 
@@ -174,7 +177,7 @@ function query(models) {
 exports.run = function() {
   tb_head();
 
-  var models = get_model_ids();
+  var models = get_models();
   var len = models.length;
   total = len;
 
